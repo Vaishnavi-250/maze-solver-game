@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Setup Profile - Attendance System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-user-cog"></i> {% if is_new %}Create{% else %}Update{% endif %} Your Profile
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-4">
+                    {% if is_new %}
+                        Let's set up your profile to get started with attendance tracking.
+                    {% else %}
+                        Update your employee information and office location.
+                    {% endif %}
+                </p>
+
+                <form method="post" id="profile-form">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.employee_id.id_for_label }}" class="form-label">
+                                <i class="fas fa-id-badge"></i> Employee ID *
+                            </label>
+                            {{ form.employee_id }}
+                            {% if form.employee_id.errors %}
+                                <div class="text-danger small mt-1">{{ form.employee_id.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                <i class="fas fa-phone"></i> Phone Number
+                            </label>
+                            {{ form.phone }}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.department.id_for_label }}" class="form-label">
+                                <i class="fas fa-building"></i> Department
+                            </label>
+                            {{ form.department }}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.position.id_for_label }}" class="form-label">
+                                <i class="fas fa-briefcase"></i> Position
+                            </label>
+                            {{ form.position }}
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <h5 class="mb-3">
+                        <i class="fas fa-map-marker-alt"></i> Office Location (for GPS tracking)
+                    </h5>
+
+                    <div id="office-map" style="height: 300px; border-radius: 12px; margin-bottom: 1.5rem;"></div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.office_latitude.id_for_label }}" class="form-label">
+                                <i class="fas fa-compass"></i> Office Latitude
+                            </label>
+                            {{ form.office_latitude }}
+                            <small class="text-muted">Click on the map or enter manually</small>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.office_longitude.id_for_label }}" class="form-label">
+                                <i class="fas fa-compass"></i> Office Longitude
+                            </label>
+                            {{ form.office_longitude }}
+                            <small class="text-muted">Click on the map or enter manually</small>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>How to set office location:</strong> Click on the map to mark your office location, 
+                        or enter the coordinates manually (latitude: -90 to 90, longitude: -180 to 180).
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-pink py-2">
+                            <i class="fas fa-save"></i> Save Profile
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+    let map = null;
+    let marker = null;
+    let latitude = parseFloat(document.getElementById('id_office_latitude').value) || 24.8607;
+    let longitude = parseFloat(document.getElementById('id_office_longitude').value) || 67.0011;
+
+    // Initialize map
+    function initOfficeMap() {
+        map = L.map('office-map').setView([latitude, longitude], 14);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Add marker
+        marker = L.marker([latitude, longitude], {
+            draggable: true
+        }).addTo(map).bindPopup('Office Location');
+
+        // Update coordinates when marker is dragged
+        marker.on('dragend', function() {
+            const pos = marker.getLatLng();
+            latitude = pos.lat;
+            longitude = pos.lng;
+            document.getElementById('id_office_latitude').value = latitude.toFixed(6);
+            document.getElementById('id_office_longitude').value = longitude.toFixed(6);
+        });
+
+        // Add click event to map
+        map.on('click', function(e) {
+            latitude = e.latlng.lat;
+            longitude = e.latlng.lng;
+            
+            marker.setLatLng(e.latlng);
+            
+            document.getElementById('id_office_latitude').value = latitude.toFixed(6);
+            document.getElementById('id_office_longitude').value = longitude.toFixed(6);
+        });
+    }
+
+    // Get user's current location and center map
+    function setCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                latitude = position.coords.latitude;
+                longitude = position.coords.longitude;
+                
+                map.setView([latitude, longitude], 14);
+                marker.setLatLng([latitude, longitude]);
+                
+                document.getElementById('id_office_latitude').value = latitude.toFixed(6);
+                document.getElementById('id_office_longitude').value = longitude.toFixed(6);
+            });
+        }
+    }
+
+    // Initialize on load
+    document.addEventListener('DOMContentLoaded', function() {
+        initOfficeMap();
+        
+        // Add button to set current location
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-pink mb-3';
+        btn.innerHTML = '<i class="fas fa-location-arrow"></i> Use My Current Location';
+        btn.onclick = setCurrentLocation;
+        
+        document.getElementById('office-map').parentElement.insertBefore(btn, document.getElementById('office-map'));
+    });
+</script>
+{% endblock %}

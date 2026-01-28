@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard - Attendance System{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1><i class="fas fa-chart-pie"></i> Welcome, {{ user.first_name|default:user.username }}!</h1>
+            <p>Track your attendance and work hours with GPS location</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <p class="mb-0"><i class="fas fa-calendar-today"></i> <strong>Today:</strong> <span id="today-date"></span></p>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Attendance Status -->
+{% if today_attendance %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-clock"></i> Today's Attendance Status
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="location-info">
+                                <div class="info-row">
+                                    <span class="info-label"><i class="fas fa-sign-in-alt"></i> Check-In Time:</span>
+                                    <span class="info-value">
+                                        {% if today_attendance.check_in_time %}
+                                            <span id="check-in-time">{{ today_attendance.check_in_time|time:"H:i:s" }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Not checked in yet</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label"><i class="fas fa-map-marker-alt"></i> Check-In Distance:</span>
+                                    <span class="info-value">
+                                        {% if today_attendance.check_in_distance %}
+                                            <span class="badge badge-status badge-present">{{ today_attendance.check_in_distance|floatformat:0 }}m</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="location-info">
+                                <div class="info-row">
+                                    <span class="info-label"><i class="fas fa-sign-out-alt"></i> Check-Out Time:</span>
+                                    <span class="info-value">
+                                        {% if today_attendance.check_out_time %}
+                                            <span id="check-out-time">{{ today_attendance.check_out_time|time:"H:i:s" }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Not checked out yet</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="info-row">
+                                    <span class="info-label"><i class="fas fa-map-marker-alt"></i> Check-Out Distance:</span>
+                                    <span class="info-value">
+                                        {% if today_attendance.check_out_distance %}
+                                            <span class="badge badge-status badge-present">{{ today_attendance.check_out_distance|floatformat:0 }}m</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% if today_attendance.total_hours %}
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-hourglass-half"></i> <strong>Total Hours Worked:</strong> {{ today_attendance.total_hours }} hours
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <a href="{% url 'attendance:check_in' %}" class="btn btn-pink btn-lg w-100">
+            <i class="fas fa-sign-in-alt"></i> Check In
+        </a>
+    </div>
+    <div class="col-md-6">
+        <a href="{% url 'attendance:check_out' %}" class="btn btn-outline-pink btn-lg w-100">
+            <i class="fas fa-sign-out-alt"></i> Check Out
+        </a>
+    </div>
+</div>
+
+<!-- Monthly Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-number">{{ stats.total_days }}</div>
+            <div class="stat-label">Total Days</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-number" style="color: var(--green-success);">{{ stats.present }}</div>
+            <div class="stat-label">Present</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-number" style="color: var(--orange-warning);">{{ stats.late }}</div>
+            <div class="stat-label">Late</div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card">
+            <div class="stat-number" style="color: var(--red-danger);">{{ stats.absent }}</div>
+            <div class="stat-label">Absent</div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Attendance -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-history"></i> Recent Attendance
+            </div>
+            <div class="card-body">
+                {% if recent_attendances %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Check In</th>
+                                    <th>Check Out</th>
+                                    <th>Distance</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendance in recent_attendances %}
+                                    <tr>
+                                        <td><strong>{{ attendance.date|date:"d M Y" }}</strong></td>
+                                        <td>
+                                            {% if attendance.check_in_time %}
+                                                {{ attendance.check_in_time|time:"H:i:s" }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if attendance.check_out_time %}
+                                                {{ attendance.check_out_time|time:"H:i:s" }}
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if attendance.check_in_distance %}
+                                                <span class="badge badge-status badge-present">{{ attendance.check_in_distance|floatformat:0 }}m</span>
+                                            {% else %}
+                                                <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-status badge-{{ attendance.status }}">
+                                                {{ attendance.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'attendance:attendance_detail' attendance.id %}" class="btn btn-sm btn-pink">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'attendance:attendance_records' %}" class="btn btn-outline-pink">
+                            <i class="fas fa-list"></i> View All Records
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">No attendance records yet</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Display today's date
+    document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+</script>
+{% endblock %}

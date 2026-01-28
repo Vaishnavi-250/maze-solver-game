@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Attendance Records - Attendance System{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter"></i> Filter Records
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-2">
+                {{ form.date_from }}
+            </div>
+            <div class="col-md-2">
+                {{ form.date_to }}
+            </div>
+            <div class="col-md-3">
+                {{ form.status }}
+            </div>
+            <div class="col-md-3">
+                {{ form.employee }}
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-pink w-100">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-list"></i> Attendance Records
+    </div>
+    <div class="card-body">
+        {% if attendances %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Check In</th>
+                            <th>Check Out</th>
+                            <th>Distance</th>
+                            <th>Hours</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in attendances %}
+                            <tr>
+                                <td>
+                                    <strong>{{ attendance.date|date:"d M Y" }}</strong>
+                                </td>
+                                <td>
+                                    {% if attendance.check_in_time %}
+                                        <span title="Latitude: {{ attendance.check_in_latitude|floatformat:6 }}, Longitude: {{ attendance.check_in_longitude|floatformat:6 }}">
+                                            {{ attendance.check_in_time|time:"H:i:s" }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if attendance.check_out_time %}
+                                        <span title="Latitude: {{ attendance.check_out_latitude|floatformat:6 }}, Longitude: {{ attendance.check_out_longitude|floatformat:6 }}">
+                                            {{ attendance.check_out_time|time:"H:i:s" }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if attendance.check_in_distance %}
+                                        <span class="badge badge-status badge-present">
+                                            {{ attendance.check_in_distance|floatformat:0 }}m
+                                            {% if attendance.check_out_distance %}
+                                                / {{ attendance.check_out_distance|floatformat:0 }}m
+                                            {% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if attendance.total_hours %}
+                                        <strong>{{ attendance.total_hours }}h</strong>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge badge-status badge-{{ attendance.status }}">
+                                        {{ attendance.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'attendance:attendance_detail' attendance.id %}" class="btn btn-sm btn-pink">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Summary Statistics -->
+            <hr class="my-4">
+            <div class="row">
+                <div class="col-md-3 col-sm-6">
+                    <div class="stat-card text-center">
+                        <div class="stat-number">{{ attendances|length }}</div>
+                        <div class="stat-label">Total Records</div>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                <p class="text-muted mt-3">No attendance records found</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .table tr {
+        font-size: 0.95rem;
+    }
+</style>
+{% endblock %}

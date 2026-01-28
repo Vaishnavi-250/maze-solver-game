@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Attendance Detail - Attendance System{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <!-- Attendance Header -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-0">
+                            <i class="fas fa-file-alt"></i> 
+                            {{ attendance.date|date:"d MMMM Y" }}
+                        </h4>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <span class="badge badge-status badge-{{ attendance.status }} py-2 px-3">
+                            {{ attendance.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <!-- Check In Details -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="location-info">
+                            <h5 class="mb-3">
+                                <i class="fas fa-sign-in-alt"></i> Check In
+                            </h5>
+                            <div class="info-row">
+                                <span class="info-label">Time:</span>
+                                <span class="info-value">
+                                    {% if attendance.check_in_time %}
+                                        <strong>{{ attendance.check_in_time|time:"H:i:s" }}</strong>
+                                    {% else %}
+                                        <span class="text-muted">Not checked in</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Location:</span>
+                                <span class="info-value">
+                                    {% if attendance.check_in_latitude and attendance.check_in_longitude %}
+                                        {{ attendance.check_in_latitude|floatformat:6 }},
+                                        {{ attendance.check_in_longitude|floatformat:6 }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Distance from Office:</span>
+                                <span class="info-value">
+                                    {% if attendance.check_in_distance %}
+                                        <span class="badge badge-status badge-present">
+                                            {{ attendance.check_in_distance|floatformat:0 }}m
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Check Out Details -->
+                    <div class="col-md-6">
+                        <div class="location-info">
+                            <h5 class="mb-3">
+                                <i class="fas fa-sign-out-alt"></i> Check Out
+                            </h5>
+                            <div class="info-row">
+                                <span class="info-label">Time:</span>
+                                <span class="info-value">
+                                    {% if attendance.check_out_time %}
+                                        <strong>{{ attendance.check_out_time|time:"H:i:s" }}</strong>
+                                    {% else %}
+                                        <span class="text-muted">Not checked out</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Location:</span>
+                                <span class="info-value">
+                                    {% if attendance.check_out_latitude and attendance.check_out_longitude %}
+                                        {{ attendance.check_out_latitude|floatformat:6 }},
+                                        {{ attendance.check_out_longitude|floatformat:6 }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Distance from Office:</span>
+                                <span class="info-value">
+                                    {% if attendance.check_out_distance %}
+                                        <span class="badge badge-status badge-present">
+                                            {{ attendance.check_out_distance|floatformat:0 }}m
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Working Hours -->
+                {% if attendance.total_hours %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-hourglass-half"></i>
+                        <strong>Total Hours Worked:</strong> {{ attendance.total_hours }} hours
+                    </div>
+                {% endif %}
+
+                <!-- Notes -->
+                {% if attendance.notes %}
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="fas fa-sticky-note"></i> Notes
+                            </h6>
+                            <p class="card-text">{{ attendance.notes }}</p>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Map Display -->
+        {% if attendance.check_in_latitude and attendance.check_in_longitude %}
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-map"></i> Location Map
+                </div>
+                <div class="card-body p-0">
+                    <div id="detail-map" style="height: 400px;"></div>
+                </div>
+            </div>
+        {% endif %}
+
+        <!-- Back Button -->
+        <div class="mt-4">
+            <a href="{% url 'attendance:attendance_records' %}" class="btn btn-outline-pink w-100">
+                <i class="fas fa-arrow-left"></i> Back to Records
+            </a>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+    {% if attendance.check_in_latitude and attendance.check_in_longitude %}
+        document.addEventListener('DOMContentLoaded', function() {
+            const map = L.map('detail-map').setView(
+                [{{ attendance.check_in_latitude }}, {{ attendance.check_in_longitude }}],
+                15
+            );
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // Check-in location
+            L.circleMarker([{{ attendance.check_in_latitude }}, {{ attendance.check_in_longitude }}], {
+                color: '#4caf50',
+                fillColor: '#4caf50',
+                fillOpacity: 0.8,
+                radius: 10,
+                weight: 2
+            }).addTo(map).bindPopup('<b>Check In</b><br/>{{ attendance.check_in_time|time:"H:i:s" }}').openPopup();
+
+            // Check-out location
+            {% if attendance.check_out_latitude and attendance.check_out_longitude %}
+                L.circleMarker([{{ attendance.check_out_latitude }}, {{ attendance.check_out_longitude }}], {
+                    color: '#f44336',
+                    fillColor: '#f44336',
+                    fillOpacity: 0.8,
+                    radius: 10,
+                    weight: 2
+                }).addTo(map).bindPopup('<b>Check Out</b><br/>{{ attendance.check_out_time|time:"H:i:s" }}');
+            {% endif %}
+        });
+    {% endif %}
+</script>
+{% endblock %}
