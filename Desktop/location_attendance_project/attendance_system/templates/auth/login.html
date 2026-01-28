@@ -54,7 +54,10 @@
 
                     <div class="mt-3 text-center">
                         <p class="text-muted">
-                            Don't have an account? Contact your administrator.
+                            Don't have an account? 
+                            <a href="{% url 'signup' %}" class="text-pink fw-bold">
+                                <i class="fas fa-user-plus"></i> Create one now
+                            </a>
                         </p>
                     </div>
                 </div>
@@ -74,6 +77,15 @@
     .login-form input[type="password"] {
         class: "form-control";
         width: 100%;
+    }
+    
+    .text-pink {
+        color: #ec407a;
+    }
+    
+    .text-pink:hover {
+        color: #c2185b;
+        text-decoration: none;
     }
 </style>
 {% endblock %}

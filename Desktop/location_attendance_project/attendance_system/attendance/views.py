@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, login
+from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
@@ -9,8 +11,30 @@ from datetime import datetime, timedelta
 import json
 
 from .models import Employee, Attendance
-from .forms import EmployeeForm, AttendanceCheckInForm, AttendanceCheckOutForm, AttendanceFilterForm
+from .forms import EmployeeForm, AttendanceCheckInForm, AttendanceCheckOutForm, AttendanceFilterForm, SignUpForm
 from .utils import calculate_distance, is_within_distance, format_distance
+
+
+def signup(request):
+    """User registration view"""
+    if request.user.is_authenticated:
+        return redirect('attendance:dashboard')
+    
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, 'Account created successfully! Please log in.')
+            return redirect('login')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'{field}: {error}')
+    else:
+        form = SignUpForm()
+    
+    context = {'form': form}
+    return render(request, 'auth/signup.html', context)
 
 
 @login_required
