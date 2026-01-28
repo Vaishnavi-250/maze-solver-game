@@ -43,7 +43,7 @@ def dashboard(request):
     try:
         employee = Employee.objects.get(user=request.user)
     except Employee.DoesNotExist:
-        return redirect('setup_profile')
+        return redirect('attendance:setup_profile')
     
     today = timezone.now().date()
     today_attendance = Attendance.objects.filter(employee=employee, date=today).first()
@@ -86,7 +86,7 @@ def setup_profile(request):
         form = EmployeeForm(request.POST, instance=employee)
         if form.is_valid():
             form.save()
-            return redirect('dashboard')
+            return redirect('attendance:dashboard')
     else:
         form = EmployeeForm(instance=employee)
     
@@ -100,7 +100,7 @@ def check_in(request):
     try:
         employee = Employee.objects.get(user=request.user)
     except Employee.DoesNotExist:
-        return redirect('setup_profile')
+        return redirect('attendance:setup_profile')
     
     today = timezone.now().date()
     attendance, created = Attendance.objects.get_or_create(employee=employee, date=today)
@@ -136,7 +136,7 @@ def check_in(request):
                 instance.check_in_time = timezone.now()
             
             instance.save()
-            return redirect('dashboard')
+            return redirect('attendance:dashboard')
     else:
         if not created and attendance.check_in_time:
             form = AttendanceCheckInForm(instance=attendance)
@@ -161,7 +161,7 @@ def check_out(request):
     try:
         employee = Employee.objects.get(user=request.user)
     except Employee.DoesNotExist:
-        return redirect('setup_profile')
+        return redirect('attendance:setup_profile')
     
     today = timezone.now().date()
     attendance = get_object_or_404(Attendance, employee=employee, date=today)
@@ -197,7 +197,7 @@ def check_out(request):
                 instance.check_out_time = timezone.now()
             
             instance.save()
-            return redirect('dashboard')
+            return redirect('attendance:dashboard')
     else:
         form = AttendanceCheckOutForm(instance=attendance)
     
@@ -220,7 +220,7 @@ def attendance_records(request):
     try:
         employee = Employee.objects.get(user=request.user)
     except Employee.DoesNotExist:
-        return redirect('setup_profile')
+        return redirect('attendance:setup_profile')
     
     attendances = Attendance.objects.filter(employee=employee).order_by('-date')
     
@@ -286,7 +286,7 @@ def attendance_detail(request, attendance_id):
     
     # Check if user is authorized
     if attendance.employee.user != request.user:
-        return redirect('dashboard')
+        return redirect('attendance:dashboard')
     
     context = {
         'attendance': attendance,
